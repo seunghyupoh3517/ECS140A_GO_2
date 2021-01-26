@@ -202,7 +202,15 @@ func TestComputeBranchFactors(t *testing.T) {
 		}
 		return result
 	}
+
+	func Branchstatement(){
+		var x int = 0
+		if x == 0{
+			continue
+		}
+	}
 	`
+	
 
 	tests := []struct {
 		name     string
@@ -220,6 +228,7 @@ func TestComputeBranchFactors(t *testing.T) {
 		{"mixed_switch_no_default_for_if", 3},
 		{"single_typeswitch_no_default", 1},
 		{"nested_if_no_else", 3},
+		{"Branchstatement", 2},
 	}
 
 	branch_factors := ComputeBranchFactors(test_code)
