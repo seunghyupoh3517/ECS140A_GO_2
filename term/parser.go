@@ -127,6 +127,22 @@ parseTable[2][0], parseTable[2][4], parseTable[2][5], parseTable[2][6] = New1, N
 parseTable[3][1], parseTable[3][2], parseTable[3][3] = Args1, Args2, Arg3
 parseTable[4][5], parseTable[4][6] = Neww1, Neww2
 
+
+
+mixedArray := [][][]interface{} { 
+	{nil, {Term, Dollar}, {Term, Dollar}, {Term, Dollar}, nil, nil, nil}, //first line, line 0
+	//{nil}
+	{nil, {tokenAtom, New}, {tokenNumber}, {tokenVariable}, nil , nil, nil},   //second line, line 1
+	
+	{{}, nil, nil, nil, {tokenLpar, Args, tokenRpar}, {}, {}}, //third line, line 2
+	
+	{nil, {Term, Neww}, {Term, Neww}, {Term, Neww}, nil, nil, nil}, //forth line, line 3
+	
+	{nil, nil, nil, nil, nil, {}, {tokenComma, Args}} //fifth line, line 4
+	
+	}
+
+
 func (g Grammar) Parse(str string) (*Term, error) {
 	// TODO: matrix in the global
 	var parseTable [][]int
