@@ -142,6 +142,8 @@ mixedArray := [][][]interface{} {
 	
 	}
 
+	//mixedArray := [][][]interface{} {{nil, {Term, Dollar}, {Term, Dollar}, {Term, Dollar}, nil, nil, nil}, {nil, {tokenAtom, New}, {tokenNumber}, {tokenVariable}, nil , nil, nil}, {{}, nil, nil, nil, {tokenLpar, Args, tokenRpar}, {}, {}}, {nil, {Term, Neww}, {Term, Neww}, {Term, Neww}, nil, nil, nil}, {nil, nil, nil, nil, nil, {}, {tokenComma, Args}} }
+
 
 func (g Grammar) Parse(str string) (*Term, error) {
 	// TODO: matrix in the global
