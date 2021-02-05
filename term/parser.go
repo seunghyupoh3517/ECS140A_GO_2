@@ -113,6 +113,17 @@ const (
 	Nil		// 13
 )
 
+type nonTermial int
+
+const (
+ Start_NT nonTermial = iota
+ Term_NT
+ NT1
+ Args_NT
+ NT2
+)
+
+
 type rule [3]parsingEntry
 S1, S2, S3 := rule{Term, Dollar}, rule{Term, Dollar}, rule{Term, Dollar}
 Term1, Term2, Term3 := rule{Atom, New}, rule{Num}, rule{Var}
@@ -130,20 +141,23 @@ parseTable[4][5], parseTable[4][6] = Neww1, Neww2
 
 
 mixedArray := [][][]interface{} { 
-	{nil, {Term, Dollar}, {Term, Dollar}, {Term, Dollar}, nil, nil, nil}, //first line, line 0
+	{nil, {Term_NT, tokenEOF}, {Term_NT, tokenEOF}, {Term_NT, tokenEOF}, nil, nil, nil}, //first line, line 0
 	//{nil}
-	{nil, {tokenAtom, New}, {tokenNumber}, {tokenVariable}, nil , nil, nil},   //second line, line 1
+	{nil, {tokenAtom, NT1}, {tokenNumber}, {tokenVariable}, nil , nil, nil},   //second line, line 1
+	//tokenAtom
+	{{}, nil, nil, nil, {tokenLpar, Args_NT, tokenRpar}, {}, {}}, //third line, line 2
 	
-	{{}, nil, nil, nil, {tokenLpar, Args, tokenRpar}, {}, {}}, //third line, line 2
+	{nil, {Term_NT, NT2}, {Term_NT, NT2}, {Term_NT, NT2}, nil, nil, nil}, //forth line, line 3
 	
-	{nil, {Term, Neww}, {Term, Neww}, {Term, Neww}, nil, nil, nil}, //forth line, line 3
-	
-	{nil, nil, nil, nil, nil, {}, {tokenComma, Args}} //fifth line, line 4
+	{nil, nil, nil, nil, nil, {}, {tokenComma, Args_NT}} //fifth line, line 4
 	
 	}
 
 	//mixedArray := [][][]interface{} {{nil, {Term, Dollar}, {Term, Dollar}, {Term, Dollar}, nil, nil, nil}, {nil, {tokenAtom, New}, {tokenNumber}, {tokenVariable}, nil , nil, nil}, {{}, nil, nil, nil, {tokenLpar, Args, tokenRpar}, {}, {}}, {nil, {Term, Neww}, {Term, Neww}, {Term, Neww}, nil, nil, nil}, {nil, nil, nil, nil, nil, {}, {tokenComma, Args}} }
+	//
 
+	mixedArray := [][][]interface{} { 
+		{nil, {Term_NT, tokenEOF}, {Term_NT, tokenEOF}, {Term_NT, tokenEOF}, nil, nil, nil}, {nil, {tokenAtom, NT1}, {tokenNumber}, {tokenVariable}, nil , nil, nil},  {{}, nil, nil, nil, {tokenLpar, Args_NT, tokenRpar}, {}, {}}, {nil, {Term_NT, NT2}, {Term_NT, NT2}, {Term_NT, NT2}, nil, nil, nil}, {nil, nil, nil, nil, nil, {}, {tokenComma, Args_NT}} }
 
 func (g Grammar) Parse(str string) (*Term, error) {
 	// TODO: matrix in the global
