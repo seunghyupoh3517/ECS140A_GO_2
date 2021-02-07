@@ -26,6 +26,12 @@ type Parser interface {
 // Grammar has map from token to the term
 type Grammar struct {
 	grammar map[*Term][]*Term    // term -> term[]
+
+	// doubel chekc with the struct defination
+	stk1: []*Term
+	stk2: [][]*Term
+	termMap: [string]->[*Term]   // term.toString() -> *term
+	relationMap:  [tokenType] -> [termType]
 }
 
 // NewParser creates a struct of a type that satisfies the Parser interface.
@@ -151,7 +157,4 @@ func createCompund() {}
 
 func pushItemstoStacks() {}
 
-stk1: []*Term
-stk2: [][]*Term
-termMap: [string]->[*Term]   // term.toString() -> *term
-relationMap:  [tokenType] -> [termType]
+
