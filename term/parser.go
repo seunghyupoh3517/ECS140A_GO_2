@@ -96,6 +96,20 @@ func (g Grammar) Parse(str string) (*Term, error) {
  			// pop out the terminal and advance the tokenList index
  			// when the tokenType(terminal) are the same
  			if tokenList[tokenInd].typ == topOfStack {
+ 				// TODO: indicator for create compound 
+ 				// check if the topOfStack == tokenRpar 
+ 				// then do compound creation
+ 				// call helper function  createrCompund()
+
+ 				// TODO: indicator for pushing to stacks
+ 				// check if the topOfStack == tokenAtom && tokenList[tokenInd + 1] == tokenLpar
+ 					// Term atom being detect
+ 					// create the term for this atom. do pushing items to two stacks (stk1 - termAtom, skt2 - with empty_list( []*Term ) )
+ 				
+
+ 				// create the term, push into top of stk2's list
+ 				// but remember check the map if exits already
+
  				stack = stack[:ind]		// pop out the top element
  				tokenInd += 1;
  			} else {
@@ -131,3 +145,13 @@ func (g Grammar) Parse(str string) (*Term, error) {
 
 	return nil, nil
 }
+
+func createCompund() {}
+
+
+func pushItemstoStacks() {}
+
+stk1: []*Term
+stk2: [][]*Term
+termMap: [string]->[*Term]   // term.toString() -> *term
+relationMap:  [tokenType] -> [termType]
