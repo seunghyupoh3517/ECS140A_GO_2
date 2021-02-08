@@ -209,6 +209,19 @@ func TestComputeBranchFactors(t *testing.T) {
 			continue
 		}
 	}
+
+	func GotoTest(){
+		var x int = 0
+		for i := 0; i < 10; i += 1 {
+			if i > 5 {
+				goto Endd
+			}
+		}
+		Endd:
+			x = 1
+			fmt.Println(x)
+		
+	}
 	`
 	
 
@@ -229,6 +242,7 @@ func TestComputeBranchFactors(t *testing.T) {
 		{"single_typeswitch_no_default", 1},
 		{"nested_if_no_else", 3},
 		{"Branchstatement", 2},
+		{"GotoTest", 3},
 	}
 
 	branch_factors := ComputeBranchFactors(test_code)
