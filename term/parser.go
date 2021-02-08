@@ -65,10 +65,10 @@ func (g Grammar) Parse(str string) (*Term, error) {
 	// The parseTable can be the type of
 	// []interface{} which is the list in a single cell
 	parseTable := mixedArray
-	var stk1 []*Term 					// functor
-	var stk2 [][]*Term   				// argument List
+	var stk1 = []*Term{} 					// functor
+	var stk2 = [][]*Term{}   				// argument List
 	var stk_ptr = 0
-	var termMap = map[string]*Term  	// term.toString() -> *term
+	var termMap = map[string]*Term{}  	// term.toString() -> *term
 
 
 	// Tokennize the input string
@@ -107,37 +107,41 @@ func (g Grammar) Parse(str string) (*Term, error) {
 					temp := Term{Typ: relationMap[tokenList[tokenInd].typ], Literal: tokenList[tokenInd].literal}
 					str := temp.String()
 					if val, ok := termMap[str]; ok {
-						stk1 = append(stk1, val) // - CHECK SYNTAX
+						stk1 = append(stk1, val) 		// - CHECK SYNTAX
 					} else { 
 						termMap[str] = &temp
 						stk1 = append(stk1, temp)
 					}
 
-					// tempList := []*Term 
-					stk2 = append(stk2, []*Term )		// push empty term[] to the stk2
-					str_ptr++
+					var tempList = []*Term{}
+					stk2 = append(stk2, tempList)		// push empty term[] to the stk2
+					stk_ptr++
 				} else if topOfStack == tokenRpar {
 					// indicator for creating the compound Term
 					if stk_ptr > 0 {
-						temp_stk1 := stk1[stk_ptr] // functor term
-						stk1 = stk1[:stk_ptr] 
-						temp_stk2[stk_ptr] := stk2[stk_ptr] // list of args terms
-						// TODO: pop stk2
-					}
-					temp := Term{Typ: TermCompound, Functor: temp_stk1 , Args: temp_stk2[]}
-					str := temp.String() 
-					if val, ok := termMap[str]; ok {
-						// TODO: Pass val to final outcome, Grammar
-					} else {
-						// TODO: Pass temp to final outcome, Grammar
+						// create the compound term						
+						temp := &Term{Typ: TermCompound, Functor: stk1[stk_ptr - 1] , Args: stk2[stk_ptr - 1]} 
+
+						// pop out the top of two stacks
+						stk_ptr-- 
+						stk1 = stk1[:stk_ptr]
+						stk2 = stk2[:stk_ptr]   
+
+						// check if exits in the termMap avoid duplicate compound
+						str := temp.String()
+						if val, ok := termMap[str]; ok {
+							temp = val 		// use the old *term if exits in the map
+						} else {
+							// put the new compound in the termMap
+							termMap[str] = temp
+						}
+
+						// append the new created compound into the next level
+						if stk_ptr > 0 {
+							stk2[stk_ptr - 1] = append(stk2[stk_ptr - 1], temp)
+						}	
 					}
 
-					stk_ptr-- // pop pop
-					if stk_ptr > 0 {
-						for len(stk2[stk_ptr]) != 0 {
-							stk2[stk_ptr] = appned(stk2[stk_ptr], temp_stk2[])
-						}
-					}
 				} else if tokenList[tokenInd+1].typ != tokenLpar && (topOfStack == tokenAtom || topOfStack == tokenNumber || topOfStack == tokenVariable)  { // general case
 					temp := Term{Typ: relationMap[tokenList[tokenInd].typ], Literal: tokenList[tokenInd].literal} // 1. Create Term struct
 					str := temp.String()
