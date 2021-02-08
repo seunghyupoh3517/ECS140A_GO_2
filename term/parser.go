@@ -57,7 +57,7 @@ const (
 	NT2
 )
 
-var mixedArray = [][][]interface{} {{nil, {Term, Dollar}, {Term, Dollar}, {Term, Dollar}, nil, nil, nil}, {nil, {tokenAtom, New}, {tokenNumber}, {tokenVariable}, nil , nil, nil}, {{}, nil, nil, nil, {tokenLpar, Args, tokenRpar}, {}, {}}, {nil, {Term, Neww}, {Term, Neww}, {Term, Neww}, nil, nil, nil}, {nil, nil, nil, nil, nil, {}, {tokenComma, Args}} }
+var mixedArray = [][][]interface{} {{nil, {Term_NT, tokenEOF}, {Term_NT, tokenEOF}, {Term_NT, tokenEOF}, nil, nil, nil}, {nil, {tokenAtom, NT1}, {tokenNumber}, {tokenVariable}, nil , nil, nil},  {{}, nil, nil, nil, {tokenLpar, Args_NT, tokenRpar}, {}, {}}, {nil, {Term_NT, NT2}, {Term_NT, NT2}, {Term_NT, NT2}, nil, nil, nil}, {nil, nil, nil, nil, nil, {}, {tokenComma, Args_NT}}}
 
 // implements the Parse method with Grammar struct
 func (g Grammar) Parse(str string) (*Term, error) {
@@ -104,12 +104,12 @@ func (g Grammar) Parse(str string) (*Term, error) {
  			if tokenList[tokenInd].typ == topOfStack {
 				if topOfStack == tokenAtom && tokenList[tokenInd + 1].typ == tokenLpar {
 					// indicator for create the functor term and push items to two stacks
-					temp := Term{Typ: relationMap[tokenList[tokenInd].typ], Literal: tokenList[tokenInd].literal}
+					temp := &Term{Typ: relationMap[tokenList[tokenInd].typ], Literal: tokenList[tokenInd].literal}
 					str := temp.String()
 					if val, ok := termMap[str]; ok {
 						stk1 = append(stk1, val) 		// - CHECK SYNTAX
 					} else { 
-						termMap[str] = &temp
+						termMap[str] = temp
 						stk1 = append(stk1, temp)
 					}
 
@@ -142,14 +142,19 @@ func (g Grammar) Parse(str string) (*Term, error) {
 						}	
 					}
 
-				} else if tokenList[tokenInd+1].typ != tokenLpar && (topOfStack == tokenAtom || topOfStack == tokenNumber || topOfStack == tokenVariable)  { // general case
-					temp := Term{Typ: relationMap[tokenList[tokenInd].typ], Literal: tokenList[tokenInd].literal} // 1. Create Term struct
+				} else if (topOfStack == tokenAtom || topOfStack == tokenNumber || topOfStack == tokenVariable)  { 
+					// general case
+					temp := &Term{Typ: relationMap[tokenList[tokenInd].typ], Literal: tokenList[tokenInd].literal} // 1. Create Term struct
 					str := temp.String()
-					if val, ok := termMap[str]; ok { // 2. Check duplicate from the termMap - if duplicate, just use the val and append to stk2
-						stk2[stk_ptr] = append(stk2[stk_ptr], val) // - CHECK SYNTAX
-					} else { // 3. if not, put new Term into termMap - if no duiplicate, use new Term to append to stk2
-						termMap[str] = &temp
-						stk2[stk_ptr] = append(stk2[stk_ptr], termMap[str]) // - CHECK SYNTAX
+
+					if val, ok := termMap[str]; ok { 				
+						temp = val
+					} else { 										// 3. if not, put new Term into termMap - if no duiplicate, use new Term to append to stk2
+						termMap[str] = temp
+					}
+
+					if stk_ptr > 0 {
+						stk2[stk_ptr - 1] = append(stk2[stk_ptr - 1], temp)
 					}
 				} 
 
@@ -177,9 +182,9 @@ func (g Grammar) Parse(str string) (*Term, error) {
  		case nonTermial:
  			// when the top is non terminal
  			// check the value in the parsing table with given token
- 			if parseTable[topOfStack][tokenList[tokenInd]] != nil {
+ 			if parseTable[topOfStack][tokenList[tokenInd].typ] != nil {
  				// value inside the cell, find the transition to other state
- 				var transList = parseTable[topOfStack][tokenList[tokenInd]]
+ 				var transList = parseTable[topOfStack][tokenList[tokenInd].typ]
  				var listIndex = len(transList) -1
 
  				stack = stack[:ind]		// pop out the top non terminal before push
