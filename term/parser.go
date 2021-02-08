@@ -57,19 +57,23 @@ const (
 	NT2
 )
 
+var mixedArray = [][][]interface{} {{nil, {Term, Dollar}, {Term, Dollar}, {Term, Dollar}, nil, nil, nil}, {nil, {tokenAtom, New}, {tokenNumber}, {tokenVariable}, nil , nil, nil}, {{}, nil, nil, nil, {tokenLpar, Args, tokenRpar}, {}, {}}, {nil, {Term, Neww}, {Term, Neww}, {Term, Neww}, nil, nil, nil}, {nil, nil, nil, nil, nil, {}, {tokenComma, Args}} }
+
 // implements the Parse method with Grammar struct
 func (g Grammar) Parse(str string) (*Term, error) {
 	// TODO: matrix in the global
 	// The parseTable can be the type of
 	// []interface{} which is the list in a single cell
-	var parseTable [][][]interface{}
-	var stk1 []*Term{} // functor
-	var stk2 [][]*Term{} // argument List
+	parseTable := mixedArray
+	var stk1 []*Term 					// functor
+	var stk2 [][]*Term   				// argument List
 	var stk_ptr = 0
-	var termMap = map[string]*Term{} // term.toString() -> *term
+	var termMap = map[string]*Term  	// term.toString() -> *term
+
+
+	// Tokennize the input string
 	lex := newLexer(str)
 
-	// convert the input string to tokens
 	var	tokenList []*Token
 	for {
 		token, err := lex.next()
@@ -85,7 +89,6 @@ func (g Grammar) Parse(str string) (*Term, error) {
 			}
 	}
 
-	// [ "bar", "(", "x", ")" ]
 	// pointer point to the current token in the list
 	var tokenInd = 0
 	// initialize the stack
@@ -99,7 +102,8 @@ func (g Grammar) Parse(str string) (*Term, error) {
  		switch typ := topOfStack.(type) { // tokenType or nonTerminal
  		case tokenType:
  			if tokenList[tokenInd].typ == topOfStack {
-				if tokenList[tokenInd+1].typ == tokenLpar && topOfStack == tokenAtom {
+				if topOfStack == tokenAtom && tokenList[tokenInd + 1].typ == tokenLpar {
+					// indicator for create the functor term and push items to two stacks
 					temp := Term{Typ: relationMap[tokenList[tokenInd].typ], Literal: tokenList[tokenInd].literal}
 					str := temp.String()
 					if val, ok := termMap[str]; ok {
@@ -108,10 +112,12 @@ func (g Grammar) Parse(str string) (*Term, error) {
 						termMap[str] = &temp
 						stk1 = append(stk1, temp)
 					}
-					stk2[stk_ptr] = append(stk2[stk_ptr], nil) // either way push empty into stk2, just to have equal level
+
+					// tempList := []*Term 
+					stk2 = append(stk2, []*Term )		// push empty term[] to the stk2
 					str_ptr++
-				}  
-				else if topOfStack == tokenRpar {
+				} else if topOfStack == tokenRpar {
+					// indicator for creating the compound Term
 					if stk_ptr > 0 {
 						temp_stk1 := stk1[stk_ptr] // functor term
 						stk1 = stk1[:stk_ptr] 
@@ -132,9 +138,7 @@ func (g Grammar) Parse(str string) (*Term, error) {
 							stk2[stk_ptr] = appned(stk2[stk_ptr], temp_stk2[])
 						}
 					}
-				} 
-
-				else if tokenList[tokenInd+1].typ != tokenLpar && (topOfStack == tokenAtom || topOfStack == tokenNumber || topOfStack == tokenVariable)  { // general case
+				} else if tokenList[tokenInd+1].typ != tokenLpar && (topOfStack == tokenAtom || topOfStack == tokenNumber || topOfStack == tokenVariable)  { // general case
 					temp := Term{Typ: relationMap[tokenList[tokenInd].typ], Literal: tokenList[tokenInd].literal} // 1. Create Term struct
 					str := temp.String()
 					if val, ok := termMap[str]; ok { // 2. Check duplicate from the termMap - if duplicate, just use the val and append to stk2
