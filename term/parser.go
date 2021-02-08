@@ -84,11 +84,11 @@ func (g Grammar) Parse(str string) (*Term, error) {
 	var	tokenList []*Token
 	for {
 		token, err := lex.next()
-		
+
 		if err == ErrLexer {
 			// validating the given string, return error if can't parse to token
 			// TODO: double check with error object return type
-			fmt.Println("***** Error from line 84 ")
+			// fmt.Println("***** Error from line 84 ")
 			return nil, ErrParser
 			} else {
 				if token.typ == tokenEOF {
@@ -108,9 +108,20 @@ func (g Grammar) Parse(str string) (*Term, error) {
  	for len(stack) != 0 {
 
  		ind := len(stack) - 1		// index of top element in the stack
- 		topOfStack := stack[ind]	
+ 		topOfStack := stack[ind]
+
+		fmt.Println("==================================")
+		fmt.Println("Token type:", tokenList[tokenInd].typ, " Token literal:", tokenList[tokenInd].literal)
+		fmt.Println("The topOfStack type is:", topOfStack)
+		fmt.Println("==================================")
+
  		switch typ := topOfStack.(type) { // tokenType or nonTerminal
  		case tokenType:
+
+			// fmt.Println("==================================")
+			// fmt.Println("Token type:", tokenList[tokenInd].typ, " Token literal:", tokenList[tokenInd].literal)
+			// fmt.Println("==================================")
+
  			if tokenList[tokenInd].typ == topOfStack {
 				if topOfStack == tokenAtom && tokenList[tokenInd + 1].typ == tokenLpar {
 					// indicator for create the functor term and push items to two stacks
@@ -118,7 +129,7 @@ func (g Grammar) Parse(str string) (*Term, error) {
 					str := temp.String()
 					if val, ok := termMap[str]; ok {
 						stk1 = append(stk1, val) 		// - CHECK SYNTAX
-					} else { 
+					} else {
 						termMap[str] = temp
 						stk1 = append(stk1, temp)
 					}
@@ -129,13 +140,13 @@ func (g Grammar) Parse(str string) (*Term, error) {
 				} else if topOfStack == tokenRpar {
 					// indicator for creating the compound Term
 					if stk_ptr > 0 {
-						// create the compound term						
-						temp := &Term{Typ: TermCompound, Functor: stk1[stk_ptr - 1] , Args: stk2[stk_ptr - 1]} 
+						// create the compound term
+						temp := &Term{Typ: TermCompound, Functor: stk1[stk_ptr - 1] , Args: stk2[stk_ptr - 1]}
 
 						// pop out the top of two stacks
-						stk_ptr-- 
+						stk_ptr--
 						stk1 = stk1[:stk_ptr]
-						stk2 = stk2[:stk_ptr]   
+						stk2 = stk2[:stk_ptr]
 
 						// check if exits in the termMap avoid duplicate compound
 						str := temp.String()
@@ -152,31 +163,36 @@ func (g Grammar) Parse(str string) (*Term, error) {
 						} else {
 							// we create the last final compound
 							return temp, nil
-						}	
+						}
 					}
 
-				} else if (topOfStack == tokenAtom || topOfStack == tokenNumber || topOfStack == tokenVariable)  { 
+				} else if (topOfStack == tokenAtom || topOfStack == tokenNumber || topOfStack == tokenVariable)  {
 					// general case
 					temp := &Term{Typ: relationMap[tokenList[tokenInd].typ], Literal: tokenList[tokenInd].literal} // 1. Create Term struct
 					str := temp.String()
 
-					if val, ok := termMap[str]; ok { 				
+					fmt.Println("*****************************")
+					fmt.Println(str)
+					fmt.Println("*****************************")
+
+					if val, ok := termMap[str]; ok {
 						temp = val
 					} else { 										// 3. if not, put new Term into termMap - if no duiplicate, use new Term to append to stk2
 						termMap[str] = temp
+
 					}
 
 					if stk_ptr > 0 {
 						stk2[stk_ptr - 1] = append(stk2[stk_ptr - 1], temp)
 					}
-				} 
+				}
 
 
 				// when the top is terminal
  				// pop out the terminal and advance the tokenList index
  				// when the tokenType(terminal) are the same
- 				// TODO: indicator for create compound 
- 				// check if the topOfStack == tokenRpar 
+ 				// TODO: indicator for create compound
+ 				// check if the topOfStack == tokenRpar
  				// then do compound creation
  				// call helper function  createrCompund()
  				// TODO: indicator for pushing to stacks
@@ -190,7 +206,7 @@ func (g Grammar) Parse(str string) (*Term, error) {
  			} else {
  				// terminal is not match
  				// TODO: double check here
- 				fmt.Println("***** Error from line 184 ")
+ 				// fmt.Println("***** Error from line 184 ")
  				return nil, ErrParser
  			}
 
@@ -203,7 +219,7 @@ func (g Grammar) Parse(str string) (*Term, error) {
  				// value inside the cell, find the transition to other state
  				var transList = parseTable[typ][tokenList[tokenInd].typ]
  				var listIndex = len(transList) -1
-					
+
  				//fmt.Println("$$$$$$$$$$$$$$$$$$ gan!!!")
 
  				stack = stack[:ind]		// pop out the top non terminal before push
@@ -215,14 +231,14 @@ func (g Grammar) Parse(str string) (*Term, error) {
  			} else {
  				// no value at given cell, invalid input string
  				//fmt.Println("@@@@@@@@@@@@@@@ cao!!!!")
- 				fmt.Println("***** Error from line 208 ")
+ 				// fmt.Println("***** Error from line 208 ")
  				return nil, ErrParser
  			}
 
  		default:
  			// invalid type in the stack
  			//fmt.Println(typ)
- 			fmt.Println("***** Error from line 214 ")
+ 			// fmt.Println("***** Error from line 214 ")
  			return nil, ErrParser
  		}
  	}
@@ -233,11 +249,9 @@ func (g Grammar) Parse(str string) (*Term, error) {
  			return val, nil
  		}
  	} else {
- 		fmt.Println("***** Error from line 226 ")
+ 		// fmt.Println("***** Error from line 226 ")
 		return nil, ErrParser
  	}
 
  	return nil, nil
 }
-
-
