@@ -26,31 +26,18 @@ type Parser interface {
 // Grammar has map from token to the term
 type Grammar struct {
 	grammar map[*Term][]*Term    // term -> term[]
-
-	// doubel chekc with the struct defination
-	// stk1: []*Term{}
-	// stk2: [][]*Term{}
-	// termMap: [string]->[*Term]   // term.toString() -> *term
-	termMap := make(map[string]*Term)
-	// relationMap:  [tokenType] -> [termType] - are you referring to the 'parseGrammar', the output?
 }
 
-type Stack []*Term{}
-var stk1 Stack
-var stk2 []Stack
+var relationMap = map[tokenType]TermType { // tokenType -> TermType
+	tokenAtom: TermAtom,
+	tokenNumber: TermNumber,
+	tokenVariable: TermVariable,
+}
 
 // NewParser creates a struct of a type that satisfies the Parser interface.
 func NewParser() Parser {
 	var parseGrammar Parser = Grammar{make(map[*Term][]*Term)}
 	return parseGrammar
-}
-
-
-func createCompund() {}
-
-
-func (s *Stack) Push(*Term) {
-	*s = append(*s, Term)
 }
 
 // equivalent grammar
@@ -61,6 +48,7 @@ func (s *Stack) Push(*Term) {
 
 // nonTerminal enumerates all types to non terminal
 type nonTermial int
+
 const (
 	Start_NT nonTermial = iota
 	Term_NT
@@ -69,15 +57,16 @@ const (
 	NT2
 )
 
-var parseTable = [][][]interface{}{{nil, {Term_NT, tokenEOF}, {Term_NT, tokenEOF}, {Term_NT, tokenEOF}, nil, nil, nil}, {nil, {tokenAtom, NT1}, {tokenNumber}, {tokenVariable}, nil , nil, nil},  {{}, nil, nil, nil, {tokenLpar, Args_NT, tokenRpar}, {}, {}}, {nil, {Term_NT, NT2}, {Term_NT, NT2}, {Term_NT, NT2}, nil, nil, nil}, {nil, nil, nil, nil, nil, {}, {tokenComma, Args_NT}}}
-
 // implements the Parse method with Grammar struct
 func (g Grammar) Parse(str string) (*Term, error) {
 	// TODO: matrix in the global
 	// The parseTable can be the type of
 	// []interface{} which is the list in a single cell
 	var parseTable [][][]interface{}
-
+	var stk1 []*Term{} // functor
+	var stk2 [][]*Term{} // argument List
+	var stk_ptr = 0
+	var termMap = map[string]*Term{} // term.toString() -> *term
 	lex := newLexer(str)
 
 	// convert the input string to tokens
@@ -96,11 +85,9 @@ func (g Grammar) Parse(str string) (*Term, error) {
 			}
 	}
 
-
 	// [ "bar", "(", "x", ")" ]
 	// pointer point to the current token in the list
 	var tokenInd = 0
-
 	// initialize the stack
 	// stack needs to accept two data types, nonTerminal & tokenType
 	var stack []interface{}
@@ -109,49 +96,66 @@ func (g Grammar) Parse(str string) (*Term, error) {
  	for len(stack) != 0 {
  		ind := len(stack) - 1		// index of top element in the stack
  		topOfStack := stack[ind]	
-
- 		switch typ := topOfStack.(type) { // topOfStack is the tokenType or nonTerminal
+ 		switch typ := topOfStack.(type) { // tokenType or nonTerminal
  		case tokenType:
- 			// when the top is terminal
- 			// pop out the terminal and advance the tokenList index
- 			// when the tokenType(terminal) are the same
- 			if tokenList[tokenInd].Typ == topOfStack {
-				 // TODO: indicator for pushing to stacks
-				 // check if the topOfStack == tokenAtom && tokenList[tokenInd + 1] == tokenLpar
- 				// Term atom being detect
- 				// create the term for this atom. do pushing items to two stacks (stk1 - termAtom, skt2 - with empty_list( []*Term ) )
-				 if topOfStack == tokenAtom && tokenList[tokenInd+1] == tokenLpar { //  functor
-					// check the map for the duplication
-					str := tokenList[tokenId].Literal
-					// if the map does not have the same key, push it to the term map and the stack1 - compound, stack2 - term 
-					if val, ok := termMap[str]; !ok {
-						temp := new(Term)
-						temp.Typ = TermAtom
-						temp.Literal = str
-						termMap[str] = temp
-						stk1.Push(temp)
-						stk2.Push(nil) // verification needed - list of list of pointers to struct
-					} else{
-						stk1.Push(val)
-						stk2.Push(nil)
+ 			if tokenList[tokenInd].typ == topOfStack {
+				if tokenList[tokenInd+1].typ == tokenLpar && topOfStack == tokenAtom {
+					temp := Term{Typ: relationMap[tokenList[tokenInd].typ], Literal: tokenList[tokenInd].literal}
+					str := temp.String()
+					if val, ok := termMap[str]; ok {
+						stk1 = append(stk1, val) // - CHECK SYNTAX
+					} else { 
+						termMap[str] = &temp
+						stk1 = append(stk1, temp)
+					}
+					stk2[stk_ptr] = append(stk2[stk_ptr], nil) // either way push empty into stk2, just to have equal level
+					str_ptr++
+				}  
+				else if topOfStack == tokenRpar {
+					if stk_ptr > 0 {
+						temp_stk1 := stk1[stk_ptr] // functor term
+						stk1 = stk1[:stk_ptr] 
+						temp_stk2[stk_ptr] := stk2[stk_ptr] // list of args terms
+						// TODO: pop stk2
+					}
+					temp := Term{Typ: TermCompound, Functor: temp_stk1 , Args: temp_stk2[]}
+					str := temp.String() 
+					if val, ok := termMap[str]; ok {
+						// TODO: Pass val to final outcome, Grammar
+					} else {
+						// TODO: Pass temp to final outcome, Grammar
 					}
 
-				 } else if topOfStack == tokenRPar {
-					 // check if the topOfStack == tokenRpar 
- 					// then do compound creation
- 					// call helper function  createrCompund() 2 arguments: topOftStack, 
-					// TODO: indicator for create compound 
+					stk_ptr-- // pop pop
+					if stk_ptr > 0 {
+						for len(stk2[stk_ptr]) != 0 {
+							stk2[stk_ptr] = appned(stk2[stk_ptr], temp_stk2[])
+						}
+					}
+				} 
 
-				 } else { // general case - tokenVariable, tokenNumber, tokenAtom
-					temp := new(Term)
-					temp.Typ = TermAtom
-					termMap[]
-				 }
- 				
- 				
- 				
- 				
+				else if tokenList[tokenInd+1].typ != tokenLpar && (topOfStack == tokenAtom || topOfStack == tokenNumber || topOfStack == tokenVariable)  { // general case
+					temp := Term{Typ: relationMap[tokenList[tokenInd].typ], Literal: tokenList[tokenInd].literal} // 1. Create Term struct
+					str := temp.String()
+					if val, ok := termMap[str]; ok { // 2. Check duplicate from the termMap - if duplicate, just use the val and append to stk2
+						stk2[stk_ptr] = append(stk2[stk_ptr], val) // - CHECK SYNTAX
+					} else { // 3. if not, put new Term into termMap - if no duiplicate, use new Term to append to stk2
+						termMap[str] = &temp
+						stk2[stk_ptr] = append(stk2[stk_ptr], termMap[str]) // - CHECK SYNTAX
+					}
+				} 
 
+				// when the top is terminal
+ 				// pop out the terminal and advance the tokenList index
+ 				// when the tokenType(terminal) are the same
+ 				// TODO: indicator for create compound 
+ 				// check if the topOfStack == tokenRpar 
+ 				// then do compound creation
+ 				// call helper function  createrCompund()
+ 				// TODO: indicator for pushing to stacks
+ 				// check if the topOfStack == tokenAtom && tokenList[tokenInd + 1] == tokenLpar
+ 				// Term atom being detect
+ 				// create the term for this atom. do pushing items to two stacks (stk1 - termAtom, skt2 - with empty_list( []*Term ) )
  				// create the term, push into top of stk2's list
  				// but remember check the map if exits already
  				stack = stack[:ind]		// pop out the top element
@@ -186,5 +190,7 @@ func (g Grammar) Parse(str string) (*Term, error) {
  			return nil, ErrParser
  		}
  	}
+
 	return nil, nil
 }
+
