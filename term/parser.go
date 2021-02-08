@@ -2,7 +2,7 @@ package term
 
 import (
 	"errors"
-	"fmt"
+	//"fmt"
 )
 
 // ErrParser is the error value returned by the Parser if the string is not a
@@ -58,13 +58,16 @@ const (
 	NT2
 )
 
-var mixedArray = [][][]interface{} {{nil, {Term_NT, tokenEOF}, {Term_NT, tokenEOF}, {Term_NT, tokenEOF}, nil, nil, nil}, {nil, {tokenAtom, NT1}, {tokenNumber}, {tokenVariable}, nil , nil, nil},  {{}, nil, nil, nil, {tokenLpar, Args_NT, tokenRpar}, {}, {}}, {nil, {Term_NT, NT2}, {Term_NT, NT2}, {Term_NT, NT2}, nil, nil, nil}, {nil, nil, nil, nil, nil, {}, {tokenComma, Args_NT}}}
+var mixedArray = [][][]interface{} {{nil, nil, nil, nil, {Term_NT, tokenEOF}, {Term_NT, tokenEOF}, {Term_NT, tokenEOF}}, {nil, nil , nil, nil, {tokenAtom, NT1}, {tokenNumber}, {tokenVariable}}, {{}, {tokenLpar, Args_NT, tokenRpar}, {}, {},  nil, nil, nil},  {nil, nil, nil, nil, {Term_NT, NT2}, {Term_NT, NT2}, {Term_NT, NT2}}, {nil, nil, {}, {tokenComma, Args_NT}, nil, nil, nil}}
+
+
 
 // implements the Parse method with Grammar struct
 func (g Grammar) Parse(str string) (*Term, error) {
 	// TODO: matrix in the global
 	// The parseTable can be the type of
 	// []interface{} which is the list in a single cell
+	var finalTerm = &Term{}
 	parseTable := mixedArray
 	var stk1 = []*Term{} 					// functor
 	var stk2 = [][]*Term{}   				// argument List
@@ -92,11 +95,13 @@ func (g Grammar) Parse(str string) (*Term, error) {
 			return nil, ErrParser
 			} else {
 				if token.typ == tokenEOF {
+					tokenList = append(tokenList, token)
 					break
 				}
 				tokenList = append(tokenList, token)
 			}
 	}
+
 
 	// pointer point to the current token in the list
 	var tokenInd = 0
@@ -108,16 +113,23 @@ func (g Grammar) Parse(str string) (*Term, error) {
  	for len(stack) != 0 {
 
  		ind := len(stack) - 1		// index of top element in the stack
+ 		//fmt.Println("************* Index checking Line 111")
  		topOfStack := stack[ind]
+ 		//fmt.Println("************* Index error Line 113")
 
-		fmt.Println("==================================")
-		fmt.Println("Token type:", tokenList[tokenInd].typ, " Token literal:", tokenList[tokenInd].literal)
-		fmt.Println("The topOfStack type is:", topOfStack)
-		fmt.Println("==================================")
+//		fmt.Println("==================================")
+//		fmt.Println("Token type:", tokenList[tokenInd].typ, " Token literal:", tokenList[tokenInd].literal)
+//		fmt.Println("The topOfStack type is:", topOfStack)
+//		fmt.Println("==================================")
 
  		switch typ := topOfStack.(type) { // tokenType or nonTerminal
  		case tokenType:
-
+// 			fmt.Println("==================================")
+//			fmt.Println("********** Line 120: bottle of stack:", stack[0])
+//			fmt.Println("********** Line 123: token size:", len(tokenList))
+//			fmt.Println("********** Line 123: token Ind:", tokenInd)
+//			fmt.Println("==================================")
+			
 			// fmt.Println("==================================")
 			// fmt.Println("Token type:", tokenList[tokenInd].typ, " Token literal:", tokenList[tokenInd].literal)
 			// fmt.Println("==================================")
@@ -134,7 +146,7 @@ func (g Grammar) Parse(str string) (*Term, error) {
 						stk1 = append(stk1, temp)
 					}
 
-					var tempList = []*Term{}
+					var tempList = []*Term{}			// arguments list
 					stk2 = append(stk2, tempList)		// push empty term[] to the stk2
 					stk_ptr++
 				} else if topOfStack == tokenRpar {
@@ -162,7 +174,9 @@ func (g Grammar) Parse(str string) (*Term, error) {
 							stk2[stk_ptr - 1] = append(stk2[stk_ptr - 1], temp)
 						} else {
 							// we create the last final compound
-							return temp, nil
+							//fmt.Println("************ Check Line 174:", temp.String())
+							//return temp, nil
+							finalTerm = temp
 						}
 					}
 
@@ -171,9 +185,11 @@ func (g Grammar) Parse(str string) (*Term, error) {
 					temp := &Term{Typ: relationMap[tokenList[tokenInd].typ], Literal: tokenList[tokenInd].literal} // 1. Create Term struct
 					str := temp.String()
 
-					fmt.Println("*****************************")
-					fmt.Println(str)
-					fmt.Println("*****************************")
+//					fmt.Println("*****************************")
+//					fmt.Println(str)
+//					fmt.Println(temp.Typ)
+//					fmt.Println(temp.Args)
+//					fmt.Println("*****************************")
 
 					if val, ok := termMap[str]; ok {
 						temp = val
@@ -181,10 +197,24 @@ func (g Grammar) Parse(str string) (*Term, error) {
 						termMap[str] = temp
 
 					}
-
+					finalTerm = temp
+					
+				
 					if stk_ptr > 0 {
+						//fmt.Println("************* Index checking Line 188")
 						stk2[stk_ptr - 1] = append(stk2[stk_ptr - 1], temp)
+						//fmt.Println("************* Index error Line 190")
 					}
+				} else if (topOfStack == tokenEOF) {
+					//fmt.Println("******************** I reach the end of input token *******")
+						// only a single term left, return it
+
+					 	if len(termMap) > 0 {
+						 	return finalTerm, nil
+					 	} else {
+					 		//fmt.Println("***** Error from line 198 ")
+							return nil, ErrParser
+					 	}
 				}
 
 
@@ -202,6 +232,7 @@ func (g Grammar) Parse(str string) (*Term, error) {
  				// create the term, push into top of stk2's list
  				// but remember check the map if exits already
  				stack = stack[:ind]		// pop out the top element
+ 				//fmt.Println("******* Line 231 stack size:", len(stack))
  				tokenInd += 1;
  			} else {
  				// terminal is not match
@@ -241,16 +272,6 @@ func (g Grammar) Parse(str string) (*Term, error) {
  			// fmt.Println("***** Error from line 214 ")
  			return nil, ErrParser
  		}
- 	}
-
- 	// only a single term left, return it
- 	if len(termMap) > 0 {
- 		for _, val := range termMap {
- 			return val, nil
- 		}
- 	} else {
- 		// fmt.Println("***** Error from line 226 ")
-		return nil, ErrParser
  	}
 
  	return nil, nil
