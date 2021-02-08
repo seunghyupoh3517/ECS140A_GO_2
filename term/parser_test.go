@@ -8,6 +8,8 @@ import (
 func TestParserInvalidTerms(t *testing.T) {
 	for idx, input := range []string{
 		// Invalid terms
+		 "$",
+		 ",(())",
 		 "f)",
 		 "f()",
 		 "f((",
