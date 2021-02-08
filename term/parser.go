@@ -139,6 +139,9 @@ func (g Grammar) Parse(str string) (*Term, error) {
 						// append the new created compound into the next level
 						if stk_ptr > 0 {
 							stk2[stk_ptr - 1] = append(stk2[stk_ptr - 1], temp)
+						} else {
+							// we create the last final compound
+							return temp, nil
 						}	
 					}
 
@@ -157,6 +160,7 @@ func (g Grammar) Parse(str string) (*Term, error) {
 						stk2[stk_ptr - 1] = append(stk2[stk_ptr - 1], temp)
 					}
 				} 
+
 
 				// when the top is terminal
  				// pop out the terminal and advance the tokenList index
@@ -182,9 +186,9 @@ func (g Grammar) Parse(str string) (*Term, error) {
  		case nonTermial:
  			// when the top is non terminal
  			// check the value in the parsing table with given token
- 			if parseTable[topOfStack][tokenList[tokenInd].typ] != nil {
+ 			if parseTable[topOfStack.(int)][tokenList[tokenInd].typ] != nil {
  				// value inside the cell, find the transition to other state
- 				var transList = parseTable[topOfStack][tokenList[tokenInd].typ]
+ 				var transList = parseTable[topOfStack.(int)][tokenList[tokenInd].typ]
  				var listIndex = len(transList) -1
 
  				stack = stack[:ind]		// pop out the top non terminal before push
@@ -204,6 +208,13 @@ func (g Grammar) Parse(str string) (*Term, error) {
  		}
  	}
 
-	return nil, nil
+ 	// only a single term left, return it
+ 	if len(termMap) > 0 {
+ 		for _, val := range termMap {
+ 			return val, nil
+ 		}
+ 	} else {
+		return nil, ErrParser
+ 	}
 }
 
