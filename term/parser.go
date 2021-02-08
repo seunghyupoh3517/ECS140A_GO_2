@@ -72,12 +72,19 @@ func (g Grammar) Parse(str string) (*Term, error) {
 	var termMap = map[string]*Term{}  	// term.toString() -> *term
 
 
+	// Test if the given is empty
+	emplex := newLexer(str)
+	emp, _:= emplex.next()
+	if emp.typ == tokenEOF{
+		return nil, nil
+	}
+
 	// Tokennize the input string
 	lex := newLexer(str)
-
 	var	tokenList []*Token
 	for {
 		token, err := lex.next()
+		
 		if err == ErrLexer {
 			// validating the given string, return error if can't parse to token
 			// TODO: double check with error object return type
@@ -99,6 +106,7 @@ func (g Grammar) Parse(str string) (*Term, error) {
 	stack = append(stack, Start_NT)
 
  	for len(stack) != 0 {
+
  		ind := len(stack) - 1		// index of top element in the stack
  		topOfStack := stack[ind]	
  		switch typ := topOfStack.(type) { // tokenType or nonTerminal
