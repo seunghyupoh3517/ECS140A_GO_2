@@ -59,7 +59,6 @@ const (
 
 var mixedArray = [][][]interface{} {{nil, nil, nil, nil, {Term_NT, tokenEOF}, {Term_NT, tokenEOF}, {Term_NT, tokenEOF}}, {nil, nil , nil, nil, {tokenAtom, NT1}, {tokenNumber}, {tokenVariable}}, {{}, {tokenLpar, Args_NT, tokenRpar}, {}, {},  nil, nil, nil},  {nil, nil, nil, nil, {Term_NT, NT2}, {Term_NT, NT2}, {Term_NT, NT2}}, {nil, nil, {}, {tokenComma, Args_NT}, nil, nil, nil}}
 
-
 // implements the Parse method with Grammar struct
 func (g Grammar) Parse(str string) (*Term, error) {
 	// The parseTable can be the type of
