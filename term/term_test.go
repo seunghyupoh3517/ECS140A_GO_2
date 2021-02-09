@@ -18,10 +18,13 @@ func TestTermToString(t *testing.T) {
 		fooX := &Term{Typ: TermCompound, Functor: foo, Args: []*Term{X}}
 		trm := &Term{Typ: TermCompound, Functor: bar, Args: []*Term{num1, a, fooX}}
 		// Expected string for the term trm
-		expected := "bar(1, a, foo(X))"
+		expected := "bar(1, a, foo(X))" // valid case - Atom doesn't need to be a functor,  functor is an atom, foo() invalid case for this particular project
+		// free to use recursion, even in the solution the recursion was used
 		actual := trm.String()
 		if expected != actual {
 			t.Errorf("Expected %s, actual %s ", expected, actual)
 		}
 	}()
 }
+
+

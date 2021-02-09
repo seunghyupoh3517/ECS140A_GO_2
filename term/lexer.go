@@ -27,6 +27,8 @@ const (
 	tokenNumber                    // for the (natural) number tokens like '0' and '123'
 	tokenVariable                  // for the variable tokens like 'Var2' and '_X', which start with a capital letter or underscore.
 )
+// var mixedArray = [][][]interface{} {{nil, nil, nil, nil, {Term_NT, tokenEOF}, {Term_NT, tokenEOF}, {Term_NT, tokenEOF}}, {nil, nil , nil, nil, {tokenAtom, NT1}, {tokenNumber}, {tokenVariable}}, {{}, {tokenLpar, Args_NT, tokenRpar}, {}, {},  nil, nil, nil},  {nil, nil, nil, nil, {Term_NT, NT2}, {Term_NT, NT2}, {Term_NT, NT2}}, {nil, nil, {}, {tokenComma, Args_NT}, nil, nil, nil}} 
+
 
 // Token struct
 type Token struct {

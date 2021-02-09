@@ -28,185 +28,179 @@ type Grammar struct {
 	grammar map[*Term][]*Term    // term -> term[]
 }
 
+var relationMap = map[tokenType]TermType { // tokenType -> TermType
+	tokenAtom: TermAtom,
+	tokenNumber: TermNumber,
+	tokenVariable: TermVariable,
+}
+
 // NewParser creates a struct of a type that satisfies the Parser interface.
 func NewParser() Parser {
-	var parseGrammar Parser := Grammar{make(map[*Token]*Term)}
+	var parseGrammar Parser = Grammar{make(map[*Term][]*Term)}
 	return parseGrammar
 }
 
-// what dose Parse need to do?
-// it receives a string, we need to convert it to the term type, Otherwise, return a error for invalid string given to us
-// we can apply the lexer to separate the string to tokens
-// For converting to the term, we need to figure out several attributes and assign to the Term struct
-	// term type
-	// content
-	// functor, the name of the function
-	// args
-	// use term_test as reference, it shows how to initialize a Term object
-
-// New unambiguous grammar with left  factorization 
+// equivalent grammar
 // <term> ::= ATOM <new> | NUM | VAR
 // <new> ::= nil | ( <args> )
 // <args> ::= <term> <new2>
 // <new2> ::= nil | , <args>
 
-// Parsing  table
-//      |	$			atom				num 			var					(				)			,
-//		-----------------------------------------------------------------------------------------------------------------
-// S	|   X			S::=term $			S::=term $		S::=term $			X				X			X  
-// term |	X			term::=atom new 	term:=num		term:=var			X				X			X
-// new	|	new::=nil	X					X				X					new::=( args )	new::=nil	new::=nil
-// args	|	X			args::=term new2	args:=term new2 args:=term  new2	X				X			X
-// new2	|	X			X					X				X					X				new2:=nil	new2:=, args
-
-//	testing bar(1, a, foo(X))
-//	Matched				Stack				Input (token)		Action 
-//						term$				bar(1, a, foo(X))$
-//						atom new$			bar(1, a, foo(X))$	output term -> atom new	
-//	bar					new$				(1, a, foo(X))$		match bar - atom
-//	bar					(args)$				(1, a, foo(X))$		output new -> (args)
-//	bar(				args)$				1, a, foo(X))$		match (
-//	bar(				term new2)$ 		1, a, foo(X))$		output args -> term new2
-// 	bar(				num new2)$			1, a, foo(X))$		output term -> num
-//	bar(1				new2)$				, a, foo(X))$		match 1 - num
-//	bar(1				, args)$			, a, foo(X))$		output new2 -> , args
-//	bar(1,				args)$				a, foo(X))$			match ,
-//	bar(1,				term new2)$ 		a, foo(X))$			output args -> term new2
-// 	bar(1,				atom new new2)$		a, foo(X))$			output term -> atom new
-//	bar(1, a			new new2)$			, foo(X))$			match a - atom
-//  bar(1, a			nil new2)$			, foo(X))$			output new -> nil
-//  bar(1, a			, args)$			, foo(X))$			output new2 -> , args
-//  bar(1, a,   		args)$				foo(X))$			match ,
-//	bar(1, a,  	 		term new2)$			foo(X))$			output args -> term new2
-//	bar(1, a, 			atom new new2)$		foo(X))$			output term -> atom new
-//	bar(1, a, foo		new new2)$			(X))$				match foo - atom
-// 	bar(1, a, foo		(args)new2)$		(X))$				output new -> (args)
-//  bar(1, a, foo(  	args)new2)$			X))$				match (
-//  bar(1, a, foo(  	term new2)new2)$	X))$				output args -> term new2
-//  bar(1, a, foo(  	var new2)new2)$		X))$				output term -> var
-//  bar(1, a, foo(X 	new2)new2)$			))$					match X - var
-//  bar(1, a, foo(X	  	nill)new2)$			))$					output new2 -> nil
-//  bar(1, a, foo(X)  	new2)$				)$					match )
-//  bar(1, a, foo(X)  	nil)$				)$					output new2 -> nil
-//  bar(1, a, foo(X))  	$					$					match )
-//	COMPLETED
-
-
-// I was going to use two different types - non terminal and terminal, and differentiate the numbers with the type however
-// I cannot assign two different types to an array, thus, I am using one type containing both nonterminal and terminal and am going to
-// differentiate them by if condition nonterminal 1 - 5, terminal 6 - 13 - deduct 5 to use it as index.
-// Pasing table ERROR if the first entry is 0  
-type parsingEntry int
-const ( 		
-	S		parsingEntry = iota + 1 // 1
-	Term	// 2
-	New 	// 3
-	Args	// 4
-	Neww	// 5
-	Dollar	// When entry > 5, deduct 5 in order to use it with the index 
-	Atom	// 7
-	Num		// 8
-	Var		// 9
-	Lpar	// 10
-	Rpar	// 11
-	Comma	// 12
-	Nil		// 13
-)
-
+// nonTerminal enumerates all types to non terminal
 type nonTermial int
 
 const (
- Start_NT nonTermial = iota
- Term_NT
- NT1
- Args_NT
- NT2
+	Start_NT nonTermial = iota
+	Term_NT
+	NT1
+	Args_NT
+	NT2
 )
 
-
-type rule [3]parsingEntry
-S1, S2, S3 := rule{Term, Dollar}, rule{Term, Dollar}, rule{Term, Dollar}
-Term1, Term2, Term3 := rule{Atom, New}, rule{Num}, rule{Var}
-New1, New2, New3, New4 := rule{Nil}, rule{Lpar, Args, Rpar}, rule{Nil}, rule{Nil}
-Args1, Args2, Arg3 := rule{Term, Neww}, rule{Term, Neww}, rule{Term, Neww}
-Neww1, Neww2 := rule{Nil}, rule{Comma, Args}
-	
-var parseTable [5][7]rule
-parseTable[0][1], parseTable[0][2], parseTable[0][3] = S1, S2, S3
-parseTable[1][1], parseTable[1][2], parseTable[1][3] = Term1, Term2, Term3
-parseTable[2][0], parseTable[2][4], parseTable[2][5], parseTable[2][6] = New1, New2, New3, New4
-parseTable[3][1], parseTable[3][2], parseTable[3][3] = Args1, Args2, Arg3
-parseTable[4][5], parseTable[4][6] = Neww1, Neww2
+var mixedArray = [][][]interface{} {{nil, nil, nil, nil, {Term_NT, tokenEOF}, {Term_NT, tokenEOF}, {Term_NT, tokenEOF}}, {nil, nil , nil, nil, {tokenAtom, NT1}, {tokenNumber}, {tokenVariable}}, {{}, {tokenLpar, Args_NT, tokenRpar}, {}, {},  nil, nil, nil},  {nil, nil, nil, nil, {Term_NT, NT2}, {Term_NT, NT2}, {Term_NT, NT2}}, {nil, nil, {}, {tokenComma, Args_NT}, nil, nil, nil}}
 
 
-
-mixedArray := [][][]interface{} { 
-	{nil, {Term_NT, tokenEOF}, {Term_NT, tokenEOF}, {Term_NT, tokenEOF}, nil, nil, nil}, //first line, line 0
-	//{nil}
-	{nil, {tokenAtom, NT1}, {tokenNumber}, {tokenVariable}, nil , nil, nil},   //second line, line 1
-	//tokenAtom
-	{{}, nil, nil, nil, {tokenLpar, Args_NT, tokenRpar}, {}, {}}, //third line, line 2
-	
-	{nil, {Term_NT, NT2}, {Term_NT, NT2}, {Term_NT, NT2}, nil, nil, nil}, //forth line, line 3
-	
-	{nil, nil, nil, nil, nil, {}, {tokenComma, Args_NT}} //fifth line, line 4
-	
-	}
-
-	//mixedArray := [][][]interface{} {{nil, {Term, Dollar}, {Term, Dollar}, {Term, Dollar}, nil, nil, nil}, {nil, {tokenAtom, New}, {tokenNumber}, {tokenVariable}, nil , nil, nil}, {{}, nil, nil, nil, {tokenLpar, Args, tokenRpar}, {}, {}}, {nil, {Term, Neww}, {Term, Neww}, {Term, Neww}, nil, nil, nil}, {nil, nil, nil, nil, nil, {}, {tokenComma, Args}} }
-	//
-
-	mixedArray := [][][]interface{} { 
-		{nil, {Term_NT, tokenEOF}, {Term_NT, tokenEOF}, {Term_NT, tokenEOF}, nil, nil, nil}, {nil, {tokenAtom, NT1}, {tokenNumber}, {tokenVariable}, nil , nil, nil},  {{}, nil, nil, nil, {tokenLpar, Args_NT, tokenRpar}, {}, {}}, {nil, {Term_NT, NT2}, {Term_NT, NT2}, {Term_NT, NT2}, nil, nil, nil}, {nil, nil, nil, nil, nil, {}, {tokenComma, Args_NT}} }
-
+// implements the Parse method with Grammar struct
 func (g Grammar) Parse(str string) (*Term, error) {
-	// TODO: matrix in the global
-	var parseTable [][]int
+	// The parseTable can be the type of
+	// []interface{} which is the list in a single cell
+	var finalTerm = &Term{}
+	parseTable := mixedArray
+	var stk1 = []*Term{} 					// functor
+	var stk2 = [][]*Term{}   				// argument List
+	var stk_ptr = 0
+	var termMap = map[string]*Term{}  	// term.toString() -> *term
 
+	// Tokennize the input string
 	lex := newLexer(str)
-
-	// convert the input string to tokens
 	var	tokenList []*Token
-	for token, err := lex.next(); err != ErrLexer {
-		tokenList.append(token)
-	} else {
-		// validating the given string, return error if can't parse to token
-		// TODO: double check with error object return type
-		return nil, fmt.Errorf(lex.ErrLexer)
+	for {
+		token, err := lex.next()
+
+		if err == ErrLexer {
+			// validating the given string, return error if can't parse to token
+			return nil, ErrParser
+			} else {
+				if token.typ == tokenEOF {
+					tokenList = append(tokenList, token)
+					break
+				}
+				tokenList = append(tokenList, token)
+			}
 	}
 
-	// [ "bar", "(", "x", ")" ]
-	// pointer point to the current token
+	// pointer point to the current token in the list
 	var tokenInd = 0
 	// initialize the stack
-	var stack []nonTermial
-	stack.append(Start)
- 	while (len(stack) != 0 ) {
- 		ind := len(stack) - 1		// ind 
- 		topOfStack := stack[ind]
+	// stack needs to accept two data types, nonTerminal & tokenType
+	var stack []interface{}
+	stack = append(stack, Start_NT)
 
- 		switch typ := topOfStack.(type) {
- 		case tokenType:
- 			// when the top is terminal
- 			// pop out the terminal and advance the tokenList index 
- 			// when the tokenType(terminal) are the same
- 			if tokenList[tokenInd].typ == topOfStack.typ {
- 				stack = stack[:ind]		// pop out the top element
- 				tokenInd++;	
- 			} else {
- 				// terminal is not match
- 				return nil, fmt.Errorf("Invalid input string")
- 			}
+	if len(tokenList) != 1 && tokenList[0].typ != tokenEOF {
+	 	for len(stack) != 0 {
 
- 		case nonTermial: 
- 			// when the top is non terminal
- 			if parseTable[topOfStack][]
+	 		ind := len(stack) - 1		// index of top element in the stack
 
- 		default:
- 			// invalid type in the stack
- 			return nil, fmt.Errorf("Invalid type in the stack")
- 		}
- 	}
+	 		topOfStack := stack[ind]
 
+	 		switch typ := topOfStack.(type) { // tokenType or nonTerminal
+	 		case tokenType:
+	 			if tokenList[tokenInd].typ == topOfStack {
+					if topOfStack == tokenAtom && tokenList[tokenInd + 1].typ == tokenLpar {
+						// indicator for create the functor term and push items to two stacks
+						temp := &Term{Typ: relationMap[tokenList[tokenInd].typ], Literal: tokenList[tokenInd].literal}
+						str := temp.String()
 
+						if val, ok := termMap[str]; ok {
+							stk1 = append(stk1, val) 		// - CHECK SYNTAX
+						} else {
+							termMap[str] = temp
+							stk1 = append(stk1, temp)
+						}
+
+						var tempList = []*Term{}			// arguments list
+						stk2 = append(stk2, tempList)		// push empty term[] to the stk2
+						stk_ptr++
+					} else if topOfStack == tokenRpar {
+						// indicator for creating the compound Term
+						if stk_ptr > 0 {
+							// create the compound term
+							temp := &Term{Typ: TermCompound, Functor: stk1[stk_ptr - 1] , Args: stk2[stk_ptr - 1]}
+
+							// pop out the top of two stacks
+							stk_ptr--
+							stk1 = stk1[:stk_ptr]
+							stk2 = stk2[:stk_ptr]
+
+							// check if exits in the termMap avoid duplicate compound
+							str := temp.String()
+							if val, ok := termMap[str]; ok {
+								temp = val 		// use the old *term if exits in the map
+							} else {
+								// put the new compound in the termMap
+								termMap[str] = temp
+							}
+
+							// append the new created compound into the next level
+							if stk_ptr > 0 {
+								stk2[stk_ptr - 1] = append(stk2[stk_ptr - 1], temp)
+							} else {
+								// we create the last final compound
+								finalTerm = temp
+							}
+						}
+
+					} else if (topOfStack == tokenAtom || topOfStack == tokenNumber || topOfStack == tokenVariable)  {
+						// general case
+						temp := &Term{Typ: relationMap[tokenList[tokenInd].typ], Literal: tokenList[tokenInd].literal} // 1. Create Term struct
+						str := temp.String()
+
+						if val, ok := termMap[str]; ok {
+							temp = val
+						} else { 			// 3. if not, put new Term into termMap - if no duiplicate, use new Term to append to stk2
+							termMap[str] = temp
+
+						}
+						finalTerm = temp
+
+						if stk_ptr > 0 {
+							stk2[stk_ptr - 1] = append(stk2[stk_ptr - 1], temp)
+						}
+					} else if (topOfStack == tokenEOF) {
+							// only a single term left, return it
+						 	if len(termMap) > 0 {
+							 	return finalTerm, nil
+							}
+					}
+
+	 				stack = stack[:ind]		// pop out the top element
+	 				tokenInd += 1;
+	 			} else {
+	 				// terminal is not match
+	 				return nil, ErrParser
+	 			}
+
+	 		case nonTermial:
+	 			// when the top is non terminal
+	 			// check the value in the parsing table with given token
+	 			if parseTable[typ][tokenList[tokenInd].typ] != nil {
+	 				// value inside the cell, find the transition to other state
+	 				var transList = parseTable[typ][tokenList[tokenInd].typ]
+	 				var listIndex = len(transList) -1
+	 				stack = stack[:ind]		// pop out the top non terminal before push
+
+	 				// push T -> X1 X2 X3 to the stack in reverse order
+	 				for listIndex >= 0 {
+		 				stack = append(stack, transList[listIndex])
+						listIndex -= 1
+		 			}
+	 			} else {
+	 				return nil, ErrParser
+	 			}
+	 		}
+	 	}
+	}
+
+	// Return here because we see an empty string
+	return nil, nil
 }
